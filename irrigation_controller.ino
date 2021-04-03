@@ -10,14 +10,14 @@ PROGRAM OBJECTIVE:
 Read 14 10HS sensors (Decagon Devices, Pullman, WA), convert the voltage measurements to volumetric water content (VWC), and control 14 irrigation plots based on the comparison of readings with Thresholds by opening and closing fourteen regular solenoid valves. The system can log the data on a SD card with time stamp and print the result to the Serial Monitor. Setup also includes one AM2302 temperature and relativity humidity sensor.
 
 THE HARDWARE:
-We used one Arduino open source prototype board (Mega 2560; Arduino, Ivrea, Italy), one stackable secure digital (SD) shield with built-in real-time clock (RTC) (SD 2.0; Adafruit, China) and one SD card (1 Gb; SanDisk Corporation, Milpitas, CA) for the logging system. The SD card needs to be formatted to FAT to work properly in the SD shield. The stacked boards were connected to two LEDs (green and red), a 5 VDC relay driver board with 16 relays (SainSmart, Leawood, KA), 14 capacitance-type soil moisture sensors (10HS; Decagon Devices, Pullman, WA), and 14 24 VAC 1-in regular solenoid valves (Rain Bird, Tucson, AZ). We added one temperature and relativity humidity sensor (AM2302; Adafruit). The SD shield was used to collect data, because the Arduino itself is not able to log the readings. The SD shield is assembled, with all the components pre-soldered. The user will only need to solder on stacking headers (not included, ordered separately) to attach to the Arduino. 
+We used one Arduino open source prototype board (Mega 2560; Arduino, Ivrea, Italy), one stackable secure digital (SD) shield with built-in real-time clock (RTC) (SD 2.0; Adafruit, China) and one SD card (1 Gb; SanDisk Corporation, Milpitas, CA) for the logging system. The SD card needs to be formatted to FAT to work properly in the SD shield. The stacked boards were connected to two LEDs (green and red), a 5 VDC relay driver board with 16 relays (SainSmart, Leawood, KA), 14 capacitance-type soil moisture sensors (10HS; Decagon Devices, Pullman, WA), and 14 24 VAC 1-in regular solenoid valves (Rain Bird, Tucson, AZ). We added one temperature and relativity humidity sensor (AM2302; Adafruit). The SD shield was used to collect data, because the Arduino itself is not able to log the readings. The SD shield is assembled, with all the components pre-soldered. The user will only need to solder on stacking headers (not included, ordered separately) to attach to the Arduino.
 
 WIRING:
 1) All indicated colors are suggestions.
 2) 10HS sensors: The 10HS data output (red wires) connected to analog pins A0 - A3 (sensors 1 - 4) and A6 - A15 (sensors 5 - 14). The 10HS excitation/power (white wires) of two sensors were tied together and connected to digital pins D43 - D49 (connections made using 'euro-style' terminal strip). All 14 10HS ground wires (bare wires) to ground (GND).
 3) The RTC on the AdaFruit datalogging shield uses analog pins A4 and A5, so those cannot be used for sensor measurements.
 4) AM2302 temperature and relativity humidity sensor: Left pin connected to 5V, second pin from left connected to digital pin D2, and right pin connected to GND.
-5) The SD/RTC shield does not get plugged in on top of the Arduino Mega. It is easier to sue by using jumper wires to make the needed connections. AdaFruit datalogging shield attached to Arduino Mega as follows:  
+5) The SD/RTC shield does not get plugged in on top of the Arduino Mega. It is easier to sue by using jumper wires to make the needed connections. AdaFruit datalogging shield attached to Arduino Mega as follows:
 Arduino    SD shield
 5V  to  5V
 GND to  GND
@@ -43,9 +43,12 @@ UPDATES:
 #include "RTClib.h"
 #include "DHT.h"
 
+#define N_SENSORS 15
+#define SENSOR_VOLTAGE_REF 5
+
 // Declare variables for 14 sensors (numbered from #1 - #14). The number of variables needs to be sensor n+1 due to the counting starts on 0 instead of 1
-float VWC[15], Threshold[15], SubCalSlope, SubCalIntercept, h, t, e_sat, e, VPD; 
-int sensorValue[15], Counter[15], i;
+float VWC[N_SENSORS], Threshold[N_SENSORS], SubCalSlope, SubCalIntercept, h, t, e_sat, e, VPD;
+int sensorValue[N_SENSORS], Counter[N_SENSORS], i;
 unsigned long IrrigTime, RunTime;
 
 // Define the model of RTC is used
@@ -55,7 +58,8 @@ RTC_DS1307 rtc;
 #define DHTPIN 2
 
 // Define the type of temperature and relative humidity sensor we are using
-#define DHTTYPE DHT22   // DHT 22 (AM2302)
+// #define DHTTYPE DHT22   // DHT 22 (AM2302)
+#define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
 // ===========================================================================================
@@ -91,7 +95,7 @@ void setup() {
   Threshold[13]=0.4;
   Threshold[14]=0.4;
 
-  // SUBSTRATE CALIBRATION: You have to convert the voltage to VWC using soil or substrate specific calibration. Decagon has generic calibrations (check the 10HS manual at http://manuals.decagon.com/Manuals/13508_10HS_Web.pdf) or you can determine your own calibration. We used our own calibration for Fafard 1P (peat: perlite, Conrad Fafard, Inc., Agawam, MA) 
+  // SUBSTRATE CALIBRATION: You have to convert the voltage to VWC using soil or substrate specific calibration. Decagon has generic calibrations (check the 10HS manual at http://manuals.decagon.com/Manuals/13508_10HS_Web.pdf) or you can determine your own calibration. We used our own calibration for Fafard 1P (peat: perlite, Conrad Fafard, Inc., Agawam, MA)
   SubCalSlope = 1.1785;
   SubCalIntercept = -0.4938;
 
@@ -153,34 +157,34 @@ void setup() {
     dataFile.println("Date Time, temp, RH, e_sat, e, VPD, VWC[1], VWC[2], VWC[3], VWC[4], VWC[5], VWC[6], VWC[7], VWC[8], VWC[9], VWC[10], VWC[11], VWC[12], VWC[13], VWC[14], Counter[1], Counter[2], Counter[3], Counter[4], Counter[5], Counter[6], Counter[7], Counter[8], Counter[9], Counter[10], Counter[11], Counter[12], Counter[13], Counter[14]");
     dataFile.println();
     dataFile.close();
-  }  
+  }
   // If the file is not open, pop up an error
   else {
     Serial.println("error opening data file log.txt");
   }
 
-  // Configure digital pins D43 - D49 as outputs to apply voltage to all four sensors (D43: sensor 1 and 2; D44, sensor 3 and 4, D45: sensor 5 and 6; D46: sensor 7 and 8; D47: sensor 9 and 10; D48: sensor 11 and 12; D49: sensor 13 and 14)
-  pinMode(43, OUTPUT);
-  pinMode(44, OUTPUT);
-  pinMode(45, OUTPUT);
-  pinMode(46, OUTPUT);
-  pinMode(47, OUTPUT);
-  pinMode(48, OUTPUT);
-  pinMode(49, OUTPUT);
+  // Configure digital pins D43 - D49 as outputs to apply voltage to all fourteen sensors (D43: sensor 1 and 2; D44, sensor 3 and 4, D45: sensor 5 and 6; D46: sensor 7 and 8; D47: sensor 9 and 10; D48: sensor 11 and 12; D49: sensor 13 and 14)
+  // pinMode(43, OUTPUT);
+  // pinMode(44, OUTPUT);
+  // pinMode(45, OUTPUT);
+  // pinMode(46, OUTPUT);
+  // pinMode(47, OUTPUT);
+  // pinMode(48, OUTPUT);
+  // pinMode(49, OUTPUT);
 
   // Set digital pins D22 - D35 HIGH. These digital pins control the relays. Setting these pins HIGH assures that the relays are open at the initial startup or when the Arduino is reseted
-  for (i = 22; i < 36; i = i + 1) { 
+  for (i = 22; i < 36; i = i + 1) {
     digitalWrite(i, HIGH);
     // Then set pins as outputs
-    pinMode(i, OUTPUT); 
+    pinMode(i, OUTPUT);
   }
 
   // Set pins that control LEDs as output
   pinMode(8, OUTPUT);
   pinMode(9, OUTPUT);
 
-  // Use the internal 2.56 volt on the Mega board as the reference for all analog voltage measurements  
-  analogReference(INTERNAL2V56);
+  // Use the internal 2.56 volt on the Mega board as the reference for all analog voltage measurements
+  // analogReference(INTERNAL2V56);
 }
 
 // ===========================================================================================
@@ -197,16 +201,18 @@ void loop() {
     return;
   }
 
-  // Check the current data and time
+  // Check the current date and time
   DateTime now = rtc.now();
 
   // Measure the AM2302 temperature and relative humidity sensor. Reading temperature or humidity takes about 250 milliseconds. Sensor readings may also be up to 2 seconds 'old' (it is a very slow sensor)
   h = dht.readHumidity();
   t = dht.readTemperature();
+
   // Check if returns are valid, if they are NaN (not a number) then something went wrong
   if (isnan(t) || isnan(h)) {
     Serial.println("Failed to read from DHT");
-  } 
+  }
+
   // Calculate saturation vapor pressure from the measured temperature
   e_sat = 0.6112*exp((17.67*t)/(t+243.5));
   // Calculate vapor pressure from saturated vapor pressure
@@ -220,7 +226,7 @@ void loop() {
   digitalWrite(9, LOW);
 
   // Measure all the sensors. This gives a raw value between 0 and 1023. Because of limited power available from the digital pins on the Arduino Mega, 7 pins are used to power the 14 sensors (each pin powers two sensors)
-  // Power sensor 1 and 2 
+  // Power sensor 1 and 2
   digitalWrite(43,HIGH);
   // Wait 10 ms
   delay(10);
@@ -280,9 +286,9 @@ void loop() {
   }
     // Write an error message to the screen, turn on the red LED, and turn off the green LED when a particular sensor is reading too low
     if (VWC[i] < 0) {
-      Serial.print("WARNING: Sensor "); 
+      Serial.print("WARNING: Sensor ");
       Serial.print(i);
-      Serial.print(" out of range (too low). Current reading: ");  
+      Serial.print(" out of range (too low). Current reading: ");
       Serial.print(VWC[i]);
       Serial.println(" m3/m3");
       digitalWrite(8,LOW);
@@ -290,9 +296,9 @@ void loop() {
     }
     // ... or too high
     if (VWC[i] > 0.8) {
-      Serial.print("WARNING: Sensor "); 
+      Serial.print("WARNING: Sensor ");
       Serial.print(i);
-      Serial.print(" out of range (too high). Current reading: ");  
+      Serial.print(" out of range (too high). Current reading: ");
       Serial.print(VWC[i]);
       Serial.println(" m3/m3");
       digitalWrite(8,LOW);
@@ -304,21 +310,21 @@ void loop() {
   // Start with showing date and time
   // Write the month to the screen
   if (now.month() <10) Serial.print('0');
-  Serial.print(now.month(), DEC); 
+  Serial.print(now.month(), DEC);
   Serial.print('/');
   // Write the day to the screen
   if (now.day() <10) Serial.print('0');
-  Serial.print(now.day(), DEC); 
+  Serial.print(now.day(), DEC);
   Serial.print('/');
   // Write the year to the screen
-  Serial.print(now.year(), DEC); 
+  Serial.print(now.year(), DEC);
   Serial.print(' ');
   // Write the hour to the screen
-  Serial.print(now.hour(), DEC); 
+  Serial.print(now.hour(), DEC);
   Serial.print(':');
   // Write the minute to the screen
   if (now.minute() <10) Serial.print('0');
-  Serial.print(now.minute(), DEC); 
+  Serial.print(now.minute(), DEC);
   Serial.print(':');
   // Write the second to the screen
   if (now.second() <10) Serial.print('0');
@@ -327,15 +333,15 @@ void loop() {
 
   // On the next line, show relative humidity, temperature, saturation vapor pressure, vapor pressure and VPD
   Serial.println();
-  Serial.print("Humidity: "); 
+  Serial.print("Humidity: ");
   Serial.print(h);
-  Serial.print("%, Temperature: "); 
+  Serial.print("%, Temperature: ");
   Serial.print(t);
-  Serial.print(" *C, e_sat: "); 
+  Serial.print(" *C, e_sat: ");
   Serial.print(e_sat);
-  Serial.print(" kPa, e: "); 
+  Serial.print(" kPa, e: ");
   Serial.print(e);
-  Serial.print(" kPa, VPD: "); 
+  Serial.print(" kPa, VPD: ");
   Serial.print(VPD);
   Serial.println(" kPa");
 
@@ -350,14 +356,14 @@ void loop() {
     Serial.print(", ");
   }
 
-  // On the next line, show the number of irrigations  
+  // On the next line, show the number of irrigations
   Serial.println();
   Serial.print("Number of irrigations: ");
-  for (i = 1; i < 15; i + 1) { 
+  for (i = 1; i < 15; i + 1) {
     Serial.print("\n");
     Serial.print("Plot #");
     Serial.print(i);
-    Serial.print(" = ");    
+    Serial.print(" = ");
     Serial.print(Counter[i]);
     Serial.print(", ");
   }
@@ -367,7 +373,7 @@ void loop() {
   Serial.println();
 
   // For all 14 sensors (i goes from 1 - 14)
-  for (i = 1; i < 15; i = i + 1) { 
+  for (i = 1; i < 15; i = i + 1) {
     // Determine whether the measured VWC is below the threshold (and irrigation is needed), and, if so, turn the digital pin LOW (which closes the NO and COM connection at the relay and opens the corresponding valve). Note: the i+21 refers to the fact that irrigation in plot 1 is controlled by digital pin 22, plot 2 by pin 23, etc. Those pins are defined at the start of the program
     if (VWC[i] < Threshold[i]) {
       digitalWrite(i+21, LOW);
@@ -390,7 +396,7 @@ void loop() {
     }
   }
 
-  // Add some extra lines to the serial monitor screen  
+  // Add some extra lines to the serial monitor screen
   Serial.println();
   Serial.println("************************************************************************");
   Serial.println();
@@ -417,24 +423,24 @@ void loop() {
     dataFile.print(now.second(), DEC);
     // Now write a comma. This will result in a comma-delimited file, which is easily imported into spreadsheets
     dataFile.print(", ");
-    // Write environmental conditions to the output file 
+    // Write environmental conditions to the output file
     dataFile.print(t);
-    dataFile.print(", "); 
+    dataFile.print(", ");
     dataFile.print(h);
-    dataFile.print(", "); 
+    dataFile.print(", ");
     dataFile.print(e_sat);
-    dataFile.print(", "); 
+    dataFile.print(", ");
     dataFile.print(e);
-    dataFile.print(", "); 
+    dataFile.print(", ");
     dataFile.print(VPD);
-    dataFile.print(", "); 
+    dataFile.print(", ");
     // Write substrate volumetric water contents to the output file (14 values)
-    for (i = 1; i < 15; i = i + 1) { 
+    for (i = 1; i < 15; i = i + 1) {
       dataFile.print(VWC[i]);
       dataFile.print(", ");
     }
     // Write the number of irrigations to the output file (14 values)
-    for (i = 1; i < 15; i = i + 1) { 
+    for (i = 1; i < 15; i = i + 1) {
       dataFile.print(Counter[i]);
       dataFile.print(", ");
     }
