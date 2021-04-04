@@ -43,12 +43,12 @@ UPDATES:
 #include "RTClib.h"
 #include "DHT.h"
 
-#define N_SENSORS 15
+#define N_SENSORS 1
 #define SENSOR_VOLTAGE_REF 5
 
 // Declare variables for 14 sensors (numbered from #1 - #14). The number of variables needs to be sensor n+1 due to the counting starts on 0 instead of 1
-float VWC[N_SENSORS], Threshold[N_SENSORS], SubCalSlope, SubCalIntercept, h, t, e_sat, e, VPD;
-int sensorValue[N_SENSORS], Counter[N_SENSORS], i;
+float VWC[15], Threshold[15], SubCalSlope, SubCalIntercept, h, t, e_sat, e, VPD;
+int sensorValue[15], Counter[15], i;
 unsigned long IrrigTime, RunTime;
 
 // Define the model of RTC is used
@@ -80,7 +80,7 @@ void setup() {
   RunTime = 1800;
 
   // IRRIGATION THRESHOLDS: Values used to trigger irrigation when the sensor readings are below a specific VWC (in units of m3/m3 or L/L)
-  Threshold[1]=0.4;
+  Threshold[1]=40.0;
   Threshold[2]=0.4;
   Threshold[3]=0.4;
   Threshold[4]=0.4;
@@ -227,63 +227,67 @@ void loop() {
 
   // Measure all the sensors. This gives a raw value between 0 and 1023. Because of limited power available from the digital pins on the Arduino Mega, 7 pins are used to power the 14 sensors (each pin powers two sensors)
   // Power sensor 1 and 2
-  digitalWrite(43,HIGH);
+  // digitalWrite(43, HIGH);
   // Wait 10 ms
   delay(10);
   // Measure sensor 1 and 2
   sensorValue[1] = analogRead(0);
-  sensorValue[2] = analogRead(1);
+  // sensorValue[2] = analogRead(1);
   // And turn the power to the sensors off
-  digitalWrite(43,LOW);
+  // digitalWrite(43, LOW);
 
-  // Now repeat this process for the rest of the sensors
-  // Sensor 3 and 4
-  digitalWrite(44, HIGH);
-  delay(10);
-  sensorValue[3] = analogRead(2);
-  sensorValue[4] = analogRead(3);
-  digitalWrite(44, LOW);
+  //
+  //
+  // // Now repeat this process for the rest of the sensors
+  // // Sensor 3 and 4
+  // digitalWrite(44, HIGH);
+  // delay(10);
+  // sensorValue[3] = analogRead(2);
+  // sensorValue[4] = analogRead(3);
+  // digitalWrite(44, LOW);
+  //
+  // // Sensor 5 and 6
+  // digitalWrite(45, HIGH);
+  // delay(10);
+  // sensorValue[5] = analogRead(6);
+  // sensorValue[6] = analogRead(7);
+  // digitalWrite(45, LOW);
+  //
+  // // Sensor 7 and 8
+  // digitalWrite(46, HIGH);
+  // delay(10);
+  // sensorValue[7] = analogRead(8);
+  // sensorValue[8] = analogRead(9);
+  // digitalWrite(46, LOW);
+  //
+  // // Sensor 9 and 10
+  // digitalWrite(47, HIGH);
+  // delay(10);
+  // sensorValue[9] = analogRead(10);
+  // sensorValue[10] = analogRead(11);
+  // digitalWrite(47, LOW);
+  //
+  // // Sensor 11 and 12
+  // digitalWrite(48, HIGH);
+  // delay(10);
+  // sensorValue[11] = analogRead(12);
+  // sensorValue[12] = analogRead(13);
+  // digitalWrite(48, LOW);
+  //
+  // // Sensor 13 and 14
+  // digitalWrite(49, HIGH);
+  // delay(10);
+  // sensorValue[13] = analogRead(14);
+  // sensorValue[14] = analogRead(15);
+  // digitalWrite(49, LOW);
 
-  // Sensor 5 and 6
-  digitalWrite(45, HIGH);
-  delay(10);
-  sensorValue[5] = analogRead(6);
-  sensorValue[6] = analogRead(7);
-  digitalWrite(45, LOW);
 
-  // Sensor 7 and 8
-  digitalWrite(46, HIGH);
-  delay(10);
-  sensorValue[7] = analogRead(8);
-  sensorValue[8] = analogRead(9);
-  digitalWrite(46, LOW);
-
-  // Sensor 9 and 10
-  digitalWrite(47, HIGH);
-  delay(10);
-  sensorValue[9] = analogRead(10);
-  sensorValue[10] = analogRead(11);
-  digitalWrite(47, LOW);
-
-  // Sensor 11 and 12
-  digitalWrite(48, HIGH);
-  delay(10);
-  sensorValue[11] = analogRead(12);
-  sensorValue[12] = analogRead(13);
-  digitalWrite(48, LOW);
-
-  // Sensor 13 and 14
-  digitalWrite(49, HIGH);
-  delay(10);
-  sensorValue[13] = analogRead(14);
-  sensorValue[14] = analogRead(15);
-  digitalWrite(49, LOW);
 
   // For all 14 sensors (i goes from 1 - 14)
-  for (i = 1; i < 15; i = i + 1) {
+  for (i = 1; i <= N_SENSORS; i++) {
     // Convert the measured raw values to VWC using a calibration equation. Note the 2.56 is the reference voltage used for all analog measurements. Raw value of 0 = 0V, 1023 = 2.56V
-    VWC[i] = sensorValue[i] * (2.56/1023.0) * SubCalSlope + SubCalIntercept;
-  }
+    // VWC[i] = sensorValue[i] * (2.56/1023.0) * SubCalSlope + SubCalIntercept;
+    VWC[i] = sensorValue[i]/ 10;
     // Write an error message to the screen, turn on the red LED, and turn off the green LED when a particular sensor is reading too low
     if (VWC[i] < 0) {
       Serial.print("WARNING: Sensor ");
@@ -304,16 +308,17 @@ void loop() {
       digitalWrite(8,LOW);
       digitalWrite(9,HIGH);
     }
+  }
 
   // PRINT THE DATE AND TIME STAMP TO THE SERIAL MONITOR TO THE SERIAL PORT
   // Note the software has a quirk: Whenever the month/day/hour/minute/second is less then 10, by default it will use a single digit (e.g., '3' instead of '03'). That can result in odd formatting of the time or date. So whenever the value is less than 10, we first write a 0, followed by the single digit. This fixes the formatting. Note: Serial.print commands write information to the same line on the screen. Serial.println prints information and then goes to a new line. To send characters to the screen use '…', and to send text to the screen use "...". The value of variables can be written to screen by using the name of that variable (not in quotation marks)
   // Start with showing date and time
   // Write the month to the screen
-  if (now.month() <10) Serial.print('0');
+  if (now.month() < 10) Serial.print('0');
   Serial.print(now.month(), DEC);
   Serial.print('/');
   // Write the day to the screen
-  if (now.day() <10) Serial.print('0');
+  if (now.day() < 10) Serial.print('0');
   Serial.print(now.day(), DEC);
   Serial.print('/');
   // Write the year to the screen
@@ -323,11 +328,11 @@ void loop() {
   Serial.print(now.hour(), DEC);
   Serial.print(':');
   // Write the minute to the screen
-  if (now.minute() <10) Serial.print('0');
+  if (now.minute() < 10) Serial.print('0');
   Serial.print(now.minute(), DEC);
   Serial.print(':');
   // Write the second to the screen
-  if (now.second() <10) Serial.print('0');
+  if (now.second() < 10) Serial.print('0');
   Serial.print(now.second(), DEC);
   Serial.print(", ");
 
@@ -347,7 +352,7 @@ void loop() {
 
   // On the next line, show the measured substrate VWC
   Serial.print("VWC (m3/m3): ");
-  for (i = 1; i < 15; i = i + 1) {
+  for (i = 1; i <= N_SENSORS; i++) {
     Serial.print("\n");
     Serial.print("Plot #");
     Serial.print(i);
@@ -359,7 +364,7 @@ void loop() {
   // On the next line, show the number of irrigations
   Serial.println();
   Serial.print("Number of irrigations: ");
-  for (i = 1; i < 15; i + 1) {
+  for (i = 1; i <= N_SENSORS; i++) {
     Serial.print("\n");
     Serial.print("Plot #");
     Serial.print(i);
@@ -373,7 +378,7 @@ void loop() {
   Serial.println();
 
   // For all 14 sensors (i goes from 1 - 14)
-  for (i = 1; i < 15; i = i + 1) {
+  for (i = 1; i <= N_SENSORS; i++) {
     // Determine whether the measured VWC is below the threshold (and irrigation is needed), and, if so, turn the digital pin LOW (which closes the NO and COM connection at the relay and opens the corresponding valve). Note: the i+21 refers to the fact that irrigation in plot 1 is controlled by digital pin 22, plot 2 by pin 23, etc. Those pins are defined at the start of the program
     if (VWC[i] < Threshold[i]) {
       digitalWrite(i+21, LOW);
@@ -435,12 +440,12 @@ void loop() {
     dataFile.print(VPD);
     dataFile.print(", ");
     // Write substrate volumetric water contents to the output file (14 values)
-    for (i = 1; i < 15; i = i + 1) {
+    for (i = 1; i <= N_SENSORS; i++) {
       dataFile.print(VWC[i]);
       dataFile.print(", ");
     }
     // Write the number of irrigations to the output file (14 values)
-    for (i = 1; i < 15; i = i + 1) {
+    for (i = 1; i <= N_SENSORS; i++) {
       dataFile.print(Counter[i]);
       dataFile.print(", ");
     }
