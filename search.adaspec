@@ -1,0 +1,19 @@
+# This is where you put search engine information to make your 
+# project visible to others without having to do a bunch of lame
+# facebook posts.  
+
+tutorial-url:
+
+# Major components are the 'fun exciting' components.  
+# If your project is a good demonstration of a component
+# then you should list it here.  
+major-components: {
+   "arduino chip" : "https://adafruit.com/products/123" 
+  }
+
+# Here list any extra components
+minor-components: {
+    "jumper wire" : ""
+  }
+
+
