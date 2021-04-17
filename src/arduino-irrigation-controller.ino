@@ -38,10 +38,13 @@ UPDATES:
 // ===========================================================================================
 
 // Include the required libraries for the SD card, communications, the RTC, and the AM2302 temperature and relative humidity sensor
+#ifndef UNIT_TEST
 #include <SD.h>
 #include <Wire.h>
-#include "RTClib.h"
 #include "DHT.h"
+#include "RTClib.h"
+#endif
+
 
 #define N_SENSORS 1
 #define SENSOR_VOLTAGE_REF 5
@@ -74,7 +77,7 @@ void setup() {
   //**************************************************************************************//
 
   // IRRIGATION TIME: Set according to your need (in seconds). The irrigation time is 60 s (=1 min). You can also set different irrigation times for each plot if needed, just changing the time in each sensor identification # accordingly
-  IrrigTime = 60;
+  IrrigTime = 30;
 
   // RUN TIME: Set according to your need (in seconds). This program run every 1800 s (=30 min)
   RunTime = 1800;
@@ -453,5 +456,6 @@ void loop() {
   }
 
   // The program will run approximately as often as specified by the RunTime (at start of program). When this delay has passed, the program will run again. RunTime and IrrigTime are multiplied by 1,000 to convert it from seconds to milliseconds. 785 is an estimate of how long it takes the program to run (785 milliseconds to collect and process the data, not counting the irrigation delays). This may be a few milliseconds off, but should be very close
-  delay(RunTime*1000 - (IrrigTime*1000*14) - 785);
+  // TODO: Don't forget to put this line back in when done
+  // delay(RunTime*1000 - (IrrigTime*1000*14) - 785);
 }
