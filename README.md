@@ -7,7 +7,7 @@ TODO: Delete this and the text above, and describe your project
 Download this repo with git.
 
 ```
-$ git clone https://github.com/TheNotary/arduino_irrigation_controller
+$ git clone https://github.com/TheNotary/arduino-irrigation-controller
 ```
 
 Connect your Arduino Mega and flash it using platformio:
