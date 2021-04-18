@@ -44,35 +44,29 @@ UPDATES:
 #include "DHT.h"
 #include "RTClib.h"
 #else
-// #include <ArduinoFake.h>
+#include <ArduinoFake.h>
 #endif
-
 
 #include <irrigation.h>
 
+
 #define N_SENSORS 1
 #define SENSOR_VOLTAGE_REF 5
+
+// Define the digital signal pin number and DHTTYPE of your humidity/ temp sensor
+#define DHTPIN 2  // pin D2
+#define DHTTYPE DHT11   // DHT22 == AM2302
 
 // Declare variables for 14 sensors (numbered from #1 - #14). The number of variables needs to be sensor n+1 due to the counting starts on 0 instead of 1
 float VWC[15], Threshold[15], SubCalSlope, SubCalIntercept, h, t, e_sat, e, VPD;
 int sensorValue[15], Counter[15], i;
 unsigned long IrrigTime, RunTime;
-
-// Define the model of RTC is used
-RTC_DS1307 rtc;
-
-// Temperature and relative humidity sensor connected to digital pin D2
-#define DHTPIN 2
-
-// Define the type of temperature and relative humidity sensor we are using
-// #define DHTTYPE DHT22   // DHT 22 (AM2302)
-#define DHTTYPE DHT11
+#ifndef NATIVE
 DHT dht(DHTPIN, DHTTYPE);
+#endif
+RTC_DS1307 rtc; // Note, if you're using a different RTC chip, you can just update the type here per https://adafruit.github.io/RTClib/html/_r_t_clib_8h_source.html
 
 Irrigation irrigation;
-
-
-// ===========================================================================================
 
 template <class T> void print(T msg) {
   #ifndef NATIVE
@@ -137,19 +131,16 @@ void setup() {
   //     DO NOT MODIFY OTHER PARTS OF THE PROGRAM UNLESS YOU KNOW WHAT YOU'RE DOING                  //
   //**************************************************************************************//
 
-  // Initialize serial communication (over the USB cable connecting the Arduino Uno to a computer) at 57,600 bits per second
+  #ifndef NATIVE
   Serial.begin(57600);
-
-  // Start the WIRE library
   Wire.begin();
-
-  // Start the RTC library
+  dht.begin();
+  #endif
   rtc.begin();
 
-  // Initialize temperature and relative humidity measurements
-  dht.begin();
 
-  irrigation.begin();
+
+  #ifndef NATIVE
 
   // Check if the RTC is running. If not, show error message on serial monitor
   if (! rtc.isrunning()) {
@@ -196,6 +187,8 @@ void setup() {
   else {
     println("error opening data file log.txt");
   }
+  #endif
+
 
   // Configure digital pins D43 - D49 as outputs to apply voltage to all fourteen sensors (D43: sensor 1 and 2; D44, sensor 3 and 4, D45: sensor 5 and 6; D46: sensor 7 and 8; D47: sensor 9 and 10; D48: sensor 11 and 12; D49: sensor 13 and 14)
   // pinMode(43, OUTPUT);
@@ -219,10 +212,9 @@ void setup() {
 
   // Use the internal 2.56 volt on the Mega board as the reference for all analog voltage measurements
   // analogReference(INTERNAL2V56);
+
+  irrigation.begin();
 }
-
-
-
 
 
 // ===========================================================================================
@@ -248,9 +240,14 @@ void loopOld() {
   // Check the current date and time
   DateTime now = rtc.now();
 
+  #ifndef NATIVE
   // Measure the AM2302 temperature and relative humidity sensor. Reading temperature or humidity takes about 250 milliseconds. Sensor readings may also be up to 2 seconds 'old' (it is a very slow sensor)
   h = dht.readHumidity();
   t = dht.readTemperature();
+  #else
+  h = 50.0;
+  t = 72.0;
+  #endif
 
   // Check if returns are valid, if they are NaN (not a number) then something went wrong
   if (isnan(t) || isnan(h)) {
@@ -447,6 +444,7 @@ void loopOld() {
   println("************************************************************************");
   println();
 
+  #ifndef NATIVE
   // THE FOLLOWING SECTION IS FOR SAVING AND COLLECTING DATA ON THE SD CARD
   // Open the data file on the SD card
   File dataFile = SD.open("log.txt", FILE_WRITE);
@@ -492,6 +490,7 @@ void loopOld() {
     }
     dataFile.close();
   }
+  #endif
 
   // The program will run approximately as often as specified by the RunTime (at start of program). When this delay has passed, the program will run again. RunTime and IrrigTime are multiplied by 1,000 to convert it from seconds to milliseconds. 785 is an estimate of how long it takes the program to run (785 milliseconds to collect and process the data, not counting the irrigation delays). This may be a few milliseconds off, but should be very close
   // TODO: Don't forget to put this line back in when done
