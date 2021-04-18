@@ -3,7 +3,9 @@
 
 class Irrigation {
   public:
-    Irrigation() {}
+    Irrigation();
+    void begin();
+    int x;
     int add (int a, int b);
     int sub (int a, int b);
     int mul (int a, int b);
@@ -12,18 +14,18 @@ class Irrigation {
 
 #endif
 
-
-#ifndef HEADER_MYCLASS
-#define HEADER_MYCLASS
-
-class Unit {
-  public:
-   Unit(int xPos, int yPos);
-   int x;
-   int y;
-   int hp;
-   int color;
-   void draw(Adafruit_BicolorMatrix &matrix);
-};
-
-#endif
+//
+// #ifndef HEADER_MYCLASS
+// #define HEADER_MYCLASS
+//
+// class Unit {
+//   public:
+//    Unit(int xPos, int yPos);
+//    int x;
+//    int y;
+//    int hp;
+//    int color;
+//    void draw(Adafruit_BicolorMatrix &matrix);
+// };
+//
+// #endif

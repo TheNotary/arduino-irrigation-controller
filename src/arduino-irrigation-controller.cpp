@@ -37,14 +37,18 @@ UPDATES:
 
 // ===========================================================================================
 
-// Include the required libraries for the SD card, communications, the RTC, and the AM2302 temperature and relative humidity sensor
-#ifndef UNIT_TEST
+// Include the required libraries for interfacing with the hardware
+#ifndef NATIVE
 #include <SD.h>
 #include <Wire.h>
 #include "DHT.h"
 #include "RTClib.h"
+#else
+// #include <ArduinoFake.h>
 #endif
 
+
+#include <irrigation.h>
 
 #define N_SENSORS 1
 #define SENSOR_VOLTAGE_REF 5
@@ -65,9 +69,35 @@ RTC_DS1307 rtc;
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+Irrigation irrigation;
+
+
 // ===========================================================================================
 
-// Start the setup routine. These instructions will only get executed when the program is activated or the reset button is pressed
+template <class T> void print(T msg) {
+  #ifndef NATIVE
+  Serial.print(msg);
+  #endif
+}
+
+template <class T> void println(T msg) {
+  #ifndef NATIVE
+  Serial.println(msg);
+  #endif
+}
+
+void print(float msg, int len) {
+  #ifndef NATIVE
+  Serial.print(msg, len);
+  #endif
+}
+
+void println() {
+  #ifndef NATIVE
+  Serial.println();
+  #endif
+}
+
 
 void setup() {
 
@@ -119,38 +149,39 @@ void setup() {
   // Initialize temperature and relative humidity measurements
   dht.begin();
 
+  irrigation.begin();
+
   // Check if the RTC is running. If not, show error message on serial monitor
   if (! rtc.isrunning()) {
-    Serial.println("RTC is NOT running!");
+    println("RTC is NOT running!");
     // Following line sets the RTC to the date and time this sketch (program) was compiled
     rtc.adjust(DateTime(__DATE__, __TIME__));
   }
   else {
     // If RTC has been started, send message to serial port
-    Serial.println("Real time clock initialized.");
+    println("Real time clock initialized.");
   }
 
   // Pin to write to SD card, depends on SD board, check manufacturing specs (53 for Arduino Mega)
   const int chipSelect = 53;
-
-  // Configure digital pin D10 as output. This pin is used by default for use with the SD shield (chipSelect)
-  pinMode(53, OUTPUT);
+  // Configure digital pin D10 (53?) as output. This pin is used by default for use with the SD shield (chipSelect)
+  pinMode(chipSelect, OUTPUT);
 
   // See if the SD card is present and can be initialized. If not, send an error message to the serial port and prevent the program from running. Send a message to the screen that the SD card is being initialized
-  Serial.print("Initializing SD card... ");
+  print("Initializing SD card... ");
 
   if (!SD.begin()) {
-    Serial.println("*******************************************");
-    Serial.println("       Card failed, or not present         ");
-    Serial.println("     WARNING: NO DATA WILL BE COLLECTED!   ");
-    Serial.println("CHECK CARD AND ALL CONNECTIONS TO SD SHIELD");
-    Serial.println("*******************************************");
+    println("*******************************************");
+    println("       Card failed, or not present         ");
+    println("     WARNING: NO DATA WILL BE COLLECTED!   ");
+    println("CHECK CARD AND ALL CONNECTIONS TO SD SHIELD");
+    println("*******************************************");
   }
   else {
     // If SD card is available, send message to serial port
-    Serial.println("SD card initialized.");
+    println("SD card initialized.");
   }
-  Serial.println();
+  println();
 
   // Initialize file and write header
   File dataFile = SD.open("log.txt", FILE_WRITE);
@@ -163,7 +194,7 @@ void setup() {
   }
   // If the file is not open, pop up an error
   else {
-    Serial.println("error opening data file log.txt");
+    println("error opening data file log.txt");
   }
 
   // Configure digital pins D43 - D49 as outputs to apply voltage to all fourteen sensors (D43: sensor 1 and 2; D44, sensor 3 and 4, D45: sensor 5 and 6; D46: sensor 7 and 8; D47: sensor 9 and 10; D48: sensor 11 and 12; D49: sensor 13 and 14)
@@ -190,17 +221,27 @@ void setup() {
   // analogReference(INTERNAL2V56);
 }
 
+
+
+
+
 // ===========================================================================================
 
-// The following section (loop) of the program will run until the power is disconnected, at an interval specified by the 'RunTime'
 void loop() {
+
+}
+
+
+
+// The following section (loop) of the program will run until the power is disconnected, at an interval specified by the 'RunTime'
+void loopOld() {
 
   // Check to make sure that the frequency at which the program runs (RunTime) is at least 15x longer than the irrigation duration (IrrigTime)
   if (RunTime < IrrigTime*15) {
-    Serial.println("**********************************************");
-    Serial.println("WARNING: RunTime is too short. Please increase");
-    Serial.println("WARNING: THE PROGRAM WILL NOT RUN CORRECTLY!");
-    Serial.println("**********************************************");
+    println("**********************************************");
+    println("WARNING: RunTime is too short. Please increase");
+    println("WARNING: THE PROGRAM WILL NOT RUN CORRECTLY!");
+    println("**********************************************");
     return;
   }
 
@@ -213,7 +254,7 @@ void loop() {
 
   // Check if returns are valid, if they are NaN (not a number) then something went wrong
   if (isnan(t) || isnan(h)) {
-    Serial.println("Failed to read from DHT");
+    println("Failed to read from DHT");
   }
 
   // Calculate saturation vapor pressure from the measured temperature
@@ -293,21 +334,21 @@ void loop() {
     VWC[i] = sensorValue[i]/ 10;
     // Write an error message to the screen, turn on the red LED, and turn off the green LED when a particular sensor is reading too low
     if (VWC[i] < 0) {
-      Serial.print("WARNING: Sensor ");
-      Serial.print(i);
-      Serial.print(" out of range (too low). Current reading: ");
-      Serial.print(VWC[i]);
-      Serial.println(" m3/m3");
+      print("WARNING: Sensor ");
+      print(i);
+      print(" out of range (too low). Current reading: ");
+      print(VWC[i]);
+      println(" m3/m3");
       digitalWrite(8,LOW);
       digitalWrite(9,HIGH);
     }
     // ... or too high
     if (VWC[i] > 0.8) {
-      Serial.print("WARNING: Sensor ");
-      Serial.print(i);
-      Serial.print(" out of range (too high). Current reading: ");
-      Serial.print(VWC[i]);
-      Serial.println(" m3/m3");
+      print("WARNING: Sensor ");
+      print(i);
+      print(" out of range (too high). Current reading: ");
+      print(VWC[i]);
+      println(" m3/m3");
       digitalWrite(8,LOW);
       digitalWrite(9,HIGH);
     }
@@ -317,79 +358,77 @@ void loop() {
   // Note the software has a quirk: Whenever the month/day/hour/minute/second is less then 10, by default it will use a single digit (e.g., '3' instead of '03'). That can result in odd formatting of the time or date. So whenever the value is less than 10, we first write a 0, followed by the single digit. This fixes the formatting. Note: Serial.print commands write information to the same line on the screen. Serial.println prints information and then goes to a new line. To send characters to the screen use '…', and to send text to the screen use "...". The value of variables can be written to screen by using the name of that variable (not in quotation marks)
   // Start with showing date and time
   // Write the month to the screen
-  if (now.month() < 10) Serial.print('0');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
+  if (now.month() < 10) print('0');
+  print(now.month(), DEC);
+  print('/');
   // Write the day to the screen
-  if (now.day() < 10) Serial.print('0');
-  Serial.print(now.day(), DEC);
-  Serial.print('/');
+  if (now.day() < 10) print('0');
+  print(now.day(), DEC);
+  print('/');
   // Write the year to the screen
-  Serial.print(now.year(), DEC);
-  Serial.print(' ');
+  print(now.year(), DEC);
+  print(' ');
   // Write the hour to the screen
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
+  print(now.hour(), DEC);
+  print(':');
   // Write the minute to the screen
-  if (now.minute() < 10) Serial.print('0');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
+  if (now.minute() < 10) print('0');
+  print(now.minute(), DEC);
+  print(':');
   // Write the second to the screen
-  if (now.second() < 10) Serial.print('0');
-  Serial.print(now.second(), DEC);
-  Serial.print(", ");
+  if (now.second() < 10) print('0');
+  print(now.second(), DEC);
+  print(", ");
+  println();
 
   // On the next line, show relative humidity, temperature, saturation vapor pressure, vapor pressure and VPD
-  Serial.println();
-  Serial.print("Humidity: ");
-  Serial.print(h);
-  Serial.print("%, Temperature: ");
-  Serial.print(t);
-  Serial.print(" *C, e_sat: ");
-  Serial.print(e_sat);
-  Serial.print(" kPa, e: ");
-  Serial.print(e);
-  Serial.print(" kPa, VPD: ");
-  Serial.print(VPD);
-  Serial.println(" kPa");
+  print("Humidity: ");
+  print(h);
+  print("%, Temperature: ");
+  print(t);
+  print(" *C, e_sat: ");
+  print(e_sat);
+  print(" kPa, e: ");
+  print(e);
+  print(" kPa, VPD: ");
+  print(VPD);
+  println(" kPa");
 
   // On the next line, show the measured substrate VWC
-  Serial.print("VWC (m3/m3): ");
+  print("VWC (m3/m3): ");
   for (i = 1; i <= N_SENSORS; i++) {
-    Serial.print("\n");
-    Serial.print("Plot #");
-    Serial.print(i);
-    Serial.print(" = ");
-    Serial.print(VWC[i]);
-    Serial.print(", ");
+    println();
+    print("Plot #");
+    print(i);
+    print(" = ");
+    print(VWC[i]);
+    print(", ");
   }
+  println();
 
   // On the next line, show the number of irrigations
-  Serial.println();
-  Serial.print("Number of irrigations: ");
+  print("Number of irrigations: ");
   for (i = 1; i <= N_SENSORS; i++) {
-    Serial.print("\n");
-    Serial.print("Plot #");
-    Serial.print(i);
-    Serial.print(" = ");
-    Serial.print(Counter[i]);
-    Serial.print(", ");
+    println();
+    print("Plot #");
+    print(i);
+    print(" = ");
+    print(Counter[i]);
+    print(", ");
   }
-
-  // Add an extra line to the serial monitor screen
-  Serial.println();
-  Serial.println();
+  println();
+  println();
 
   // For all 14 sensors (i goes from 1 - 14)
   for (i = 1; i <= N_SENSORS; i++) {
     // Determine whether the measured VWC is below the threshold (and irrigation is needed), and, if so, turn the digital pin LOW (which closes the NO and COM connection at the relay and opens the corresponding valve). Note: the i+21 refers to the fact that irrigation in plot 1 is controlled by digital pin 22, plot 2 by pin 23, etc. Those pins are defined at the start of the program
     if (VWC[i] < Threshold[i]) {
       digitalWrite(i+21, LOW);
-      Serial.print("Plot ");
-      Serial.print(i);
-      Serial.print(" irrigation started. ");
+      print("Plot ");
+      print(i);
+      print(" irrigation started. ");
       delay(IrrigTime*1000);
-      Serial.println("Irrigation finished.");
+      println("Irrigation finished.");
       digitalWrite(i+21, HIGH);
       Counter[i] = Counter[i]+1;
     }
@@ -398,16 +437,15 @@ void loop() {
       // The program simply pauses for the specified irrigation time. This is done to assure that the program takes the same amount of time to run regardless of which plots get irrigated
       delay(IrrigTime*1000);
       // And send a message to the screen that the plot does not need irrigation
-      Serial.print("Plot #");
-      Serial.print(i);
-      Serial.println(" does not need irrigation.");
+      print("Plot #");
+      print(i);
+      println(" does not need irrigation.");
     }
   }
 
-  // Add some extra lines to the serial monitor screen
-  Serial.println();
-  Serial.println("************************************************************************");
-  Serial.println();
+  println();
+  println("************************************************************************");
+  println();
 
   // THE FOLLOWING SECTION IS FOR SAVING AND COLLECTING DATA ON THE SD CARD
   // Open the data file on the SD card

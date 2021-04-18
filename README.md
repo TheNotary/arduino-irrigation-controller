@@ -14,6 +14,11 @@ Connect your Arduino Mega and flash it using platformio:
 
     $ platformio run
 
+## Test
+
+    $ pio test -e native
+
+
 ## Parts
 
 * [TODO:  Add Parts](http://127.0.0.1)
