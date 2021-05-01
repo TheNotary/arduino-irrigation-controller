@@ -1,4 +1,4 @@
-# Arduino::Irrigation::Controller
+# Arduino Irrigation Controller
 
 TODO: Delete this and the text above, and describe your project
 
