@@ -91,7 +91,14 @@ void println() {
   Serial.println();
   #endif
 }
-
+void sleepyMethod() {
+    //rtc.begin();
+    //for (i = 22; i < 36; i = i + 1) {
+      //digitalWrite(i, HIGH);
+      // Then set pins as outputs
+      pinMode(23, OUTPUT);
+    //}
+}
 
 void setup() {
 

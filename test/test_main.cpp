@@ -4,11 +4,24 @@
 #include <unity.h>
 #include <my.h>
 #include "MockRTCLib.h"
+#include <ArduinoFake.h>
 #include <arduino-irrigation-controller.cpp>
 #include <irrigation.h>
 
+using namespace fakeit;
+
+void test_setup(void)
+{
+    When(Method(ArduinoFake(), pinMode)).Return();
+
+    setup();
+
+    Verify(Method(ArduinoFake(), pinMode).Using(LED_BUILTIN, OUTPUT)).Once();
+}
+
 void setUp(void) {
-// set stuff up here
+    ArduinoFakeReset();
+
 }
 
 void tearDown(void) {
@@ -17,6 +30,14 @@ void tearDown(void) {
 
 void test_led_builtin_pin_number(void) {
     TEST_ASSERT_EQUAL(5, SENSOR_VOLTAGE_REF);
+}
+
+void test_relay_pins_are_set_to_high_at_boot(void) {
+    When(Method(ArduinoFake(), pinMode)).Return();
+
+    sleepyMethod();
+
+    Verify(Method(ArduinoFake(), pinMode).Using(22, OUTPUT)).Once();
 }
 
 void mega_test(void) {
@@ -35,5 +56,6 @@ void mega_test(void) {
 int main(int argc, char **argv) {
     UNITY_BEGIN();    // IMPORTANT LINE!
     RUN_TEST(test_led_builtin_pin_number);
+    RUN_TEST(test_relay_pins_are_set_to_high_at_boot);
     UNITY_END();      // stop unit testing
 }
