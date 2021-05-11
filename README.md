@@ -4,10 +4,18 @@ TODO: Delete this and the text above, and describe your project
 
 ## Installation
 
-Download this repo with git.
+###### Prerequisites
+- Some linuxy environment (WSL, Ubuntu, etc)
+- Platformio  
+
+Download this repo with git and install the platform.
 
 ```
+$ sudo apt-get install -y build-essential git
 $ git clone https://github.com/TheNotary/arduino-irrigation-controller
+$ cd arduino-irrigation-controller
+$ pio platform install atmelavr native
+$ pio lib install
 ```
 
 Connect your Arduino Mega and flash it using platformio:
