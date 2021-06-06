@@ -31,7 +31,7 @@ void tearDown(void) {
 // clean stuff up here
 }
 
-void test_led_builtin_pin_number(void) {
+void test_example(void) {
     TEST_ASSERT_EQUAL(5, SENSOR_VOLTAGE_REF);
 }
 
@@ -58,7 +58,7 @@ void mega_test(void) {
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();    // IMPORTANT LINE!
-    RUN_TEST(test_led_builtin_pin_number);
+    RUN_TEST(test_example);
     // RUN_TEST(test_relay_pins_are_set_to_high_at_boot);
     UNITY_END();      // stop unit testing
 }
