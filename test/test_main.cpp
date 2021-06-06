@@ -1,6 +1,9 @@
-#ifndef NATIVE
-#define NATIVE
-#endif
+// #ifndef NATIVE
+// #define NATIVE
+// #endif
+
+#ifdef NATIVE
+
 #include <unity.h>
 #include <my.h>
 #include "MockRTCLib.h"
@@ -56,6 +59,19 @@ void mega_test(void) {
 int main(int argc, char **argv) {
     UNITY_BEGIN();    // IMPORTANT LINE!
     RUN_TEST(test_led_builtin_pin_number);
-    RUN_TEST(test_relay_pins_are_set_to_high_at_boot);
+    // RUN_TEST(test_relay_pins_are_set_to_high_at_boot);
     UNITY_END();      // stop unit testing
 }
+
+#else
+
+#include <Arduino.h>
+#include <unity.h>
+void setup() {
+    UNITY_BEGIN();    // IMPORTANT LINE!
+}
+
+void loop() {
+  UNITY_END(); // stop unit testing
+}
+#endif

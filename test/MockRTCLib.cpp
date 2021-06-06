@@ -1,3 +1,5 @@
+#ifdef NATIVE
+
 #include <ArduinoFake.h>
 #include "MockRTCLib.h"
 
@@ -108,3 +110,5 @@ DateTime RTC_DS1307::now() {
 
   return DateTime(0, 0, 0, 0, 0, 0);
 }
+
+#endif

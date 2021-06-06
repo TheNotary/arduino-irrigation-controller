@@ -1,3 +1,6 @@
+#ifdef NATIVE
+
+
 
 #ifndef _RTCLIB_H_
 #define _RTCLIB_H_
@@ -152,4 +155,5 @@ public:
 };
 
 
+#endif
 #endif
