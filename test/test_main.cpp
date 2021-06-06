@@ -37,10 +37,12 @@ void test_example(void) {
 
 void test_relay_pins_are_set_to_high_at_boot(void) {
     When(Method(ArduinoFake(), pinMode)).Return();
+    When(Method(ArduinoFake(), analogRead, 0)).Return(0.3);
 
     sleepyMethod();
 
-    Verify(Method(ArduinoFake(), pinMode).Using(22, OUTPUT)).Once();
+
+    Verify(Method(ArduinoFake(), pinMode).Using(23, OUTPUT)).Once();
 }
 
 void mega_test(void) {
@@ -59,7 +61,7 @@ void mega_test(void) {
 int main(int argc, char **argv) {
     UNITY_BEGIN();    // IMPORTANT LINE!
     RUN_TEST(test_example);
-    // RUN_TEST(test_relay_pins_are_set_to_high_at_boot);
+    RUN_TEST(test_relay_pins_are_set_to_high_at_boot);
     UNITY_END();      // stop unit testing
 }
 
